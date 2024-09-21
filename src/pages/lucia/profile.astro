@@ -1,0 +1,55 @@
+---
+import { db } from "../../lib/db";
+
+const user = Astro.locals.user;
+if (!user) {
+	return Astro.redirect("/lucia/login");
+}
+
+const comments = db.prepare("SELECT * FROM Comment WHERE user_id = ? ORDER BY date DESC").all(user.id)
+
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Lucia example</title>
+	</head>
+	<body>
+		<h1>Hi, {user.username}!</h1>
+		<!-- <p>Your user ID is {user.id}.</p> -->
+		<form method="post" action="/lucia/api/logout">
+			<button>Sign out</button>
+		</form>
+		<div>
+			<form method="post" action="/api/comment/create">
+				<label>
+					New Comment
+					<input name="text" />
+				</label>
+				<button>Submit</button>
+			</form>
+		</div>
+		{comments?.map(comment=>(
+			<div>
+				<span>{comment.date}</span>
+				<p>{comment.text}</p>
+			</div>
+		))}
+	</body>
+</html>
+
+<script>
+	document.forms[0].addEventListener("submit", async (e) => {
+		e.preventDefault();
+		const formElement = e.target as HTMLFormElement;
+		await fetch(formElement.action, {
+			method: formElement.method,
+			body: new FormData(formElement)
+		});
+		window.location.href = "/lucia/login";
+	});
+
+</script>
